@@ -53,3 +53,11 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# project format
+build/
+*.bin
+*.img
+*.flp
+*.iso
+*.log
