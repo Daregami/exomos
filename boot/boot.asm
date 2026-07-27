@@ -11,26 +11,25 @@ _start:
     mov ss,ax
     mov ax,0x7C00
     mov sp,ax
+
+    ; Очистка экрана
+    mov ax,0x0003
+    int 0x10
     
-    mov si,msg
+    mov si,msg_load
+    call print_str
+
+    ;;;
+
+    mov si,msg_ok
     call print_str
 
     jmp $ ; бесконечный цикл
 
-; Функция печати строки
-print_str:
-.loop:
-    lodsb ; считать символ в регистр al
-    or al,al ; если не ноль продолжаем цикл
-    jz .done
-    mov ah,0x0E ; функция режима телетайпа
-    int 0x10
-    jmp .loop
+%include "print.asm"
 
-.done:
-    ret
-
-msg db 'Hello, world!',0
+msg_load db 'Loading bootloader... ',0
+msg_ok db 'OK',0x0D,0x0A,0
 
 times 510-($-$$) db 0
 dw 0xAA55
