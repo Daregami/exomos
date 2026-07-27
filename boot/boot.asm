@@ -30,6 +30,8 @@ _start:
     mov bx,0x7E00 ; пишем сразу после MBR
     int 0x13
 
+    jc disk_error
+
     mov si,msg_ok
     call print_str
 
@@ -37,8 +39,18 @@ _start:
 
 %include "print.asm"
 
+disk_error:
+    mov si,error_disk
+    call print_str
+.halt:
+    cli ; блокируем прерывания
+    hlt ; гасим процессор
+    jmp .halt ; если случится немаскированное прерывание
+
+
 msg_load db 'Loading bootloader... ',0
 msg_ok db 'OK',0x0D,0x0A,0
+error_disk db 'Disk error...',0
 number_disk db 0
 
 times 510-($-$$) db 0

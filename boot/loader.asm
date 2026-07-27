@@ -5,7 +5,10 @@ _load_start:
     mov si,msg_kload
     call print_str
 
-    jmp $
+stop_system:
+    cli
+    hlt
+    jmp stop_system
 
 %include "print.asm"
 
