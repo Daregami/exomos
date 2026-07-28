@@ -9,6 +9,7 @@ copy_kernel:
     mov bp,32 ; количество итераций для загрузки ядра - 2мб / 64кб = 32
 
 .loop:
+    push bp
     xor ax,ax
     mov ds,ax
 
@@ -28,19 +29,47 @@ copy_kernel:
     jc bios_error
 
     add dword [disk_dap + 8],128 ; 128 * 512 = 64кб
-    add byte [bios_gdt + 28], 0x0001 ; 24 байт до дескриптора приемника
+    add word [bios_gdt + 28], 0x0001 ; 24 байт до дескриптора приемника
                                      ; + 4 увеличиваем базовый адрес на 64кб
-
+    pop bp
     dec bp
     jnz .loop ; считали нужное количество блоков - выходим
 
     mov si,msg_ok
     call print_str
 
-    ;mov ax,0x1000
-    ;mov ds,ax
-    ;mov si,0x7E00
-    ;call print_str
+    ; Открываем доступ к памяти объемом больше 1мб
+%include "a20_enable.asm"
+
+    ; Переходим в Protect Mode
+    cli ; намертво блокируем прерывания из реального режима
+    lgdt [gdt_descriptor] ; загружаем указатель на GDT
+
+    ; Включаем бит PE
+    mov eax,cr0
+    or eax,1
+    mov cr0,eax ; в протект моде
+
+    jmp 0x08:pm_entry ; обязательный дальний прыжок дабы сбросить конвейер из 16 битных инструкций
+                      ; а также применение нового сегмента кода, что по факту просто смещение от GDT структуры
+
+[BITS 32]
+pm_entry:
+    ; Настраиваем сегментные регистры на селектор данных
+    mov ax,0x10
+    mov ds,ax
+    mov es,ax
+    mov fs,ax
+    mov gs,ax
+    mov ss,ax
+
+    ; Настройка стека чуть ниже ядра
+    mov esp,0x90000
+
+    ; Так как сегменты настроены в виде Flat Model (плоской модели) с базовым адресом 0
+    ; то физический адрес 0x100000 доступен просто по указателю
+    mov eax,0x100000
+    jmp eax ; прыжок в ядро
 
 stop_system:
     cli
@@ -106,5 +135,7 @@ bios_gdt:
 
     dq 0
     dq 0
+
+%include "gdt_table.asm"
 
 times 65536-($-$$) db 0
