@@ -9,9 +9,10 @@ nasm -f bin boot/loader.asm -i boot/ -o build/loader.bin
 # Переключаем компилятор в 32-битный режим без всяких зависимостей от библиотек glibc
 # -c только скомпилировать не в объектный файл
 gcc -m32 -ffreestanding -fno-pic -O2 -c kernel/kernel.c -o build/kernel.o
+gcc -m32 -ffreestanding -fno-pic -O2 -c drivers/vga.c -o build/vga.o
 
 # Указываем формат нужной архитектуры, --oformat binary выбрасывает служебную информацию и заголовок
-ld -m elf_i386 -T kernel/kernel.ld --oformat binary build/kernel.o -o build/kernel.bin
+ld -m elf_i386 -T kernel/kernel.ld --oformat binary build/*.o -o build/kernel.bin
 
 cat build/boot.bin build/loader.bin build/kernel.bin > build/exomos.bin
 
