@@ -1,17 +1,10 @@
 #include "../drivers/vga.h"
+#include <stdint.h> // Стандартные типы данных
 
 int kernel_main(void) {
-    int offset_buf = 80 * 2 * 2; // Смещение для буфера, чтобы можно было увидеть прошлые логи
-                                 // 80 символов в строке, пропускаем 2 строки, где 2 байта на символ
-    volatile char *video_memory = (volatile char *)(0xB8000 + offset_buf);
-
-    video_memory[0] = 'O';
-    video_memory[1] = 0x0F;
-    video_memory[2] = 'K';
-    video_memory[3] = 0x0F;
-    
-    char msg = '1';
-
+    // Пишем строку с помощью vga драйвера
+    vga_goto(0,2);
+    char *msg = "Kernel started!";    
     kernel_log(msg,VGA_ERROR);
 
     // Бесконечный цкил
