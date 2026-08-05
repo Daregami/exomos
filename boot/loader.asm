@@ -1,6 +1,13 @@
 [BITS 16]
 org 0x7E00
 
+; Главный каталог (1024 записи)
+PAGE_DIRECTORY      equ 0x10000 ; 4 КБ: 0x10000–0x10FFF
+; Таблица для идентичного маппинга адресов
+PAGE_TABLE_IDENTITY equ 0x11000 ; 4 КБ: 0x11000–0x11FFF
+; Таблица для старших адресов ядра
+PAGE_TABLE_HIGH     equ 0x12000 ; 4 КБ: 0x12000–0x12FFF
+
 _load_start:
     mov si,msg_kload
     call print_str
@@ -63,13 +70,60 @@ pm_entry:
     mov gs,ax
     mov ss,ax
 
+    ; Обнуляем область под таблицы (3 * 4096 = 12288 байт = 3072 двойных слова)
+    mov edi, PAGE_DIRECTORY
+    xor eax, eax
+    mov ecx, 3072
+    rep stosd
+
+    ; Заполняем идентичный маппинг, чтобы после смены режима
+    ; процессор смог считать сдедующие инструкции из памяти
+    ; маппим первые 4 МБ (1024 страницы по 4 КБ)
+    mov edi, PAGE_TABLE_IDENTITY
+    mov eax, 0x00000003  ; физ. адрес 0, биты P + R/W (существует в памяти и можно писать и читать)
+    mov ecx, 1024
+.fill_identity:
+    mov [edi], eax
+    add eax, 0x1000
+    add edi, 4
+    dec ecx
+    jnz .fill_identity
+
+    ; Маппим 0xC0000000+ по физическим адресам 0x00000000+ (первые 4 МБ)
+    mov edi, PAGE_TABLE_HIGH
+    mov eax, 0x00000003
+    mov ecx, 1024
+.fill_high:
+    mov [edi], eax
+    add eax, 0x1000
+    add edi, 4
+    dec ecx
+    jnz .fill_high
+
+    ; Заполняем каталог страниц
+    mov dword [PAGE_DIRECTORY + 0*4], PAGE_TABLE_IDENTITY + 0x03
+    mov dword [PAGE_DIRECTORY + 768*4], PAGE_TABLE_HIGH + 0x03
+
+    ; Загружаем каталов в регистр CR3
+    mov eax, PAGE_DIRECTORY
+    mov cr3, eax
+
+    ; Включаем пагинацию (31 бит PG в CR0)
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+
+    ; Прыжок в ядро по виртуальному адресу higher-half
+    mov esp, 0xC0090000           ; стек тоже через higher-half
+    jmp 0x08:0xC0100000           ; ядро по виртуальному адресу
+
     ; Настройка стека чуть ниже ядра
-    mov esp,0x90000
+    ; mov esp,0x90000
 
     ; Так как сегменты настроены в виде Flat Model (плоской модели) с базовым адресом 0
     ; то физический адрес 0x100000 доступен просто по указателю
-    mov eax,0x100000
-    jmp eax ; прыжок в ядро
+    ; mov eax,0x100000
+    ; jmp eax ; прыжок в ядро
 
 stop_system:
     cli
