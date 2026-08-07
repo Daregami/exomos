@@ -2,8 +2,6 @@
 org 0x7C00
 
 _start:
-    mov [number_disk],dl ; запоминаем номер диска
-
     ; Начальная инициализация сегментных регистров
     xor ax,ax
     mov es,ax
@@ -13,6 +11,8 @@ _start:
     mov ss,ax
     mov ax,0x7C00
     mov sp,ax
+
+    mov [number_disk],0x80 ; запоминаем номер диска
 
     ; Очистка экрана
     mov ax,0x0003
@@ -35,6 +35,11 @@ _start:
     mov dl,[number_disk]
     jmp 0x7E00 ; если ошибок не было, прыгаем в загрузчик
 
+halt:
+    cli ; блокируем прерывания
+    hlt ; гасим процессор
+    jmp halt ; если случится немаскированное прерывание
+
 %include "print.asm"
 
 disk_error:
@@ -55,7 +60,7 @@ align 4
 disk_dap:
     db 0x10 ; размер пакета
     db 0x00
-    dw 128 ; количество секторов под загрузчик
+    dw 64 ; количество секторов под загрузчик
     dw 0x7E00 ; смещение bx
     dw 0x0000 ; сегмент es
 .lba_sector:

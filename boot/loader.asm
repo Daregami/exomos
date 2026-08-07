@@ -13,7 +13,7 @@ _load_start:
     call print_str
 
 copy_kernel:
-    mov bp,32 ; количество итераций для загрузки ядра - 2мб / 64кб = 32
+    mov bp,64 ; количество итераций для загрузки ядра - 2мб / 32кб = 64
 
 .loop:
     push bp
@@ -21,12 +21,13 @@ copy_kernel:
     mov ds,ax
 
     mov ah,0x42
+    mov dl, 0x80 ; Захардкоженный номер диска
     mov si,disk_dap
     int 0x13
 
     jc disk_error
 
-    mov cx, 0x8000 ; счетчик пересылаемых 16-битовых слов
+    mov cx, 0x4000 ; счетчик пересылаемых 16-битовых слов
     mov si, bios_gdt
     xor ax, ax
     mov es, ax
@@ -35,9 +36,9 @@ copy_kernel:
 
     jc bios_error
 
-    add dword [disk_dap + 8],128 ; 128 * 512 = 64кб
-    add word [bios_gdt + 28], 0x0001 ; 24 байт до дескриптора приемника
-                                     ; + 4 увеличиваем базовый адрес на 64кб
+    add dword [disk_dap + 8],64 ; 64 * 512 = 32кб
+    add word [bios_gdt + 26], 0x8000
+    adc byte [bios_gdt + 28], 0
     pop bp
     dec bp
     jnz .loop ; считали нужное количество блоков - выходим
@@ -157,12 +158,12 @@ align 4
 disk_dap:
     db 0x10
     db 0
-    dw 128 ; читаем 128 сектора за раз в буфер
+    dw 64 ; читаем 128 сектора за раз в буфер
     ; Адрес 0x00017E00 (буфер)
     dw 0x0000 ; Смещение буфера
     dw 0x2000 ; Сегмент буфера
 dap_lba:
-    dq 129
+    dq 65
 
 align 8
 bios_gdt:
@@ -192,4 +193,4 @@ bios_gdt:
 
 %include "gdt_table.asm"
 
-times 65536-($-$$) db 0
+times 32768-($-$$) db 0
