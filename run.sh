@@ -13,11 +13,12 @@ gcc -m32 -ffreestanding -fno-pic -O2 -c kernel/pic.c -o build/pic.o
 gcc -m32 -ffreestanding -fno-pic -O2 -c drivers/vga.c -o build/vga.o
 gcc -m32 -ffreestanding -fno-pic -O2 -c kernel/idt.c -o build/idt.o
 gcc -m32 -ffreestanding -fno-pic -O2 -c kernel/keyboard.c -o build/keyboard.o
+gcc -m32 -ffreestanding -fno-pic -O2 -c kernel/alloc.c -o build/alloc.o
 nasm -f elf32 kernel/isr.asm -o build/isr.o
 
 # Указываем формат нужной архитектуры, --oformat binary выбрасывает служебную информацию и заголовок
 # ld -m elf_i386 -T kernel/kernel.ld --oformat binary build/*.o -o build/kernel.bin
-ld -m elf_i386 -T kernel/kernel.ld --oformat binary build/kernel.o build/pic.o build/vga.o build/idt.o build/isr.o build/keyboard.o -o build/kernel.bin
+ld -m elf_i386 -T kernel/kernel.ld --oformat binary build/kernel.o build/pic.o build/vga.o build/idt.o build/isr.o build/keyboard.o build/alloc.o -o build/kernel.bin
 
 cat build/boot.bin build/loader.bin build/kernel.bin > build/exomos.bin
 
