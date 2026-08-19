@@ -14,9 +14,7 @@ void vga_print(char *str, uint8_t color) {
 
     while (*str != '\0') {
         // Экран переполнен, пока скролла нет выходим
-        if (cursor_y >= 25) {
-            break;
-        }
+        if (cursor_y >= 25) return;
         
         // Печатаем символ в текущих координатах курсора
         video_buf[(cursor_x + VGA_WIDTH * cursor_y) * 2] = *str;
@@ -27,12 +25,43 @@ void vga_print(char *str, uint8_t color) {
         //Дошли до конца строки
         if (cursor_x >= VGA_WIDTH) {
             cursor_x = 0;
-            cursor_y += 1;
+            cursor_y++;
         }
         str++;
     }
 }
 
+void vga_putchar(char c, uint8_t color) {
+    if (cursor_y >= 25) return;
+
+    video_buf[(cursor_x + VGA_WIDTH * cursor_y) * 2] = c;
+    video_buf[(cursor_x + VGA_WIDTH * cursor_y) * 2 + 1] = color;
+
+    cursor_x++;
+    if (cursor_x >= VGA_WIDTH) {
+        cursor_x = 0;
+        cursor_y++;
+    }
+}
+
+void vga_print_int(uint32_t num, uint8_t color) {
+    char buf[10]; // Максимальное число int - 4294967295, всего 10 цифр
+    int i = 0;
+
+    if (num == 0) {
+        vga_putchar('0', color);
+        return;
+    }
+
+    while (num > 0) {
+        buf[i++] = '0' + (num % 10);
+        num /= 10;
+    }
+
+    while (--i >= 0) {
+        vga_putchar(buf[i], color);
+    }
+}
 
 void kernel_log(char *msg, uint8_t type) {
     uint8_t green = BACK_BLACK | COLOR_GREEN;

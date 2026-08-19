@@ -1,7 +1,7 @@
 #include "../drivers/vga.h"
 #include <stdint.h> // Стандартные типы данных
-
-extern void idt_init();
+#include "alloc.h"
+#include "idt.h"
 
 int kernel_main(void) {
     // Пишем строку с помощью vga драйвера
@@ -10,11 +10,13 @@ int kernel_main(void) {
     kernel_log(msg,VGA_OK);
 
     idt_init();
+    pmm_init();
 
     // Разрешаем прерывания
     asm volatile("sti");
 
-    asm volatile("int $0x60");
+    // Прерывание выводит - Hello world!
+    asm volatile("int $60");
 
     // Бесконечный цкил
     while (1) {

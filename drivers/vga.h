@@ -49,6 +49,8 @@
 
 void vga_goto(uint8_t x, uint8_t y);
 void vga_print(char *str, uint8_t color);
+void vga_putchar(char c, uint8_t color);
+void vga_print_int(uint32_t num, uint8_t color);
 void kernel_log(char *msg, uint8_t type);
 
 #endif

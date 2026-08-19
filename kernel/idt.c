@@ -33,11 +33,29 @@ void idt_set_entry(int index, uint32_t handler) {
     idt[index].offset_high = (handler >> 16) & 0xFFFF; // Старшая часть адреса хендлера
 }
 
-void default_handler() {
-    vga_goto(0, 3);
-    kernel_log("Unhandled interrupt", VGA_ERROR);
+void default_handler(uint32_t vector) {
+    vga_goto(0,3);
+    kernel_log("Unhandled interrupt ", VGA_ERROR);
+    vga_print_int(vector, BACK_BLACK | COLOR_GREEN);
     outb(PIC_MASTER_CMD, PIC_EOI);
 }
+
+void hello_world(uint32_t vector) {
+    vga_goto(0,3);
+    vga_print("Hello, world!", BACK_BLACK | COLOR_GREEN);
+    outb(PIC_MASTER_CMD, PIC_EOI);
+}
+
+// Номера прерываний
+extern uint32_t isr_stub_table[256];
+// Таблица оброботчиков прерывания
+void (*handler_table[256])(uint32_t) = {0};
+
+void register_handler(uint32_t vector, void (*handler)(uint32_t)) {
+    handler_table[vector] = handler;
+}
+
+extern void keyboard_handler(uint32_t vector);
 
 void idt_init() {
     pic_remap();
@@ -47,12 +65,16 @@ void idt_init() {
     idtp.base  = (uint32_t)&idt;   
 
     // Заполняем с 32 вектора дефотным прерыванием
-    for (volatile int i = 32; i < 256; i++) {
-        idt_set_entry(i, (uint32_t)default_interrupt);
+    for (volatile uint32_t i = 0; i < 256; i++) {
+        idt_set_entry(i, isr_stub_table[i]); // записываем адреса стабов
+        register_handler(i, default_handler);
     }
 
     // Вектор 33 клавиатура (IRQ1, база 32 + 1)
-    idt_set_entry(33, (uint32_t)keyboard_interrupt);
+    register_handler(33, keyboard_handler);
+
+    register_handler(60, hello_world);
+
     // Загружаем IDT
     asm volatile("lidt %0" : : "m"(idtp));
 }

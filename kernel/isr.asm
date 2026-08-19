@@ -1,19 +1,39 @@
 [BITS 32]
 
-extern keyboard_handler
-extern default_handler
+extern handler_table
 
-global keyboard_interrupt
-global default_interrupt
-
-default_interrupt:
+%macro isr_stub 1
+isr_stub_%1:
     pusha
-    call default_handler
+    push dword %1 ; передаем номер вектора
+    call dispatch
+    add esp, 4
     popa
     iret
+%endmacro
 
-keyboard_interrupt:
-    pusha
-    call keyboard_handler
-    popa
-    iret
+%assign i 0
+%rep 256
+    isr_stub i
+%assign i i+1
+%endrep
+
+dispatch:
+    mov eax, [esp + 4]
+    mov eax, [handler_table + eax * 4]
+    test eax, eax
+    jz .skip
+    push dword [esp + 4]
+    call eax
+    add esp, 4
+.skip:
+    ret
+
+; Таблица адресов стабов, которые ссылаются на обработчики
+global isr_stub_table
+isr_stub_table:
+%assign i 0
+%rep 256
+    dd isr_stub_%+i
+%assign i i+1
+%endrep

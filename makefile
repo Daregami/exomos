@@ -1,5 +1,5 @@
 CC = gcc # Команда компилятора
-CFLAGS = -m32 -ffreestanding -fno-pic -O2 -c
+CFLAGS = -m32 -ffreestanding -fno-pic -fno-stack-protector -O2 -c
 # Переключаем компилятор в 32-битный режим без всяких зависимостей от библиотек glibc
 # -c только скомпилировать не в объектный файл
 LD = ld # Линковщик объектных файлов

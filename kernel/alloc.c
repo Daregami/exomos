@@ -38,7 +38,7 @@ void pmm_free(uint32_t addr) {
 
 void pmm_init() {
     // Помечаем все как занятое
-    for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
+    for (volatile uint32_t i = 0; i < BITMAP_SIZE; i++) {
         bitmap[i] = 0xFFFFFFFF;
     }
 
