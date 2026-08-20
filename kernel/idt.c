@@ -64,7 +64,7 @@ void idt_init() {
     idtp.limit = sizeof(idt) - 1;
     idtp.base  = (uint32_t)&idt;   
 
-    // Заполняем с 32 вектора дефотным прерыванием
+    // Заполняем вектора дефотным прерыванием
     for (volatile uint32_t i = 0; i < 256; i++) {
         idt_set_entry(i, isr_stub_table[i]); // записываем адреса стабов
         register_handler(i, default_handler);

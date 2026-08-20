@@ -3,7 +3,7 @@ CFLAGS = -m32 -ffreestanding -fno-pic -fno-stack-protector -O2 -c
 # Переключаем компилятор в 32-битный режим без всяких зависимостей от библиотек glibc
 # -c только скомпилировать не в объектный файл
 LD = ld # Линковщик объектных файлов
-LDFLAGS = -m elf_i386 -T kernel/kernel.ld --oformat binary # Указываем формат нужной архитектуры, --oformat binary выбрасывает служебную информацию и заголовок
+LDFLAGS = -m elf_i386 -T kernel/kernel.ld # Указываем формат нужной архитектуры, --oformat binary выбрасывает служебную информацию и заголовок
 NASM = nasm # Компилятор ассемблера
 QEMU = qemu-system-i386 # Эмулятор для запуска ОС
 
