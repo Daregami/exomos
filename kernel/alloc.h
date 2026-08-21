@@ -13,4 +13,6 @@ uint32_t pmm_alloc();
 void pmm_free(uint32_t addr);
 void pmm_init();
 
+extern uint32_t _kernel_end;
+
 #endif

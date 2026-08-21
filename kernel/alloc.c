@@ -42,9 +42,14 @@ void pmm_init() {
         bitmap[i] = 0xFFFFFFFF;
     }
 
-    // Освобождаем страницы выше ядра
-    // Ядро будет занимать 4 МБ физической памяти
-    for (uint32_t i = 1024; i < TOTAL_PAGES; i++) {
+    /// Вычисляем конец ядра в физических страницах
+    // _kernel_end - виртуальный адрес
+    // Вычитаем 0xC0000000, получаем физический
+    // Делим на 4096, получаем номер страницы
+    uint32_t kernel_end_phys = (uint32_t)&_kernel_end - 0xC0000000;
+    uint32_t first_free = kernel_end_phys / PAGE_SIZE;
+
+    for (uint32_t i = first_free; i < TOTAL_PAGES; i++) {
         pmm_clear(i);
     }
 }

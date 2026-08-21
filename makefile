@@ -1,5 +1,5 @@
 CC = gcc # Команда компилятора
-CFLAGS = -m32 -ffreestanding -fno-pic -fno-stack-protector -O2 -c
+CFLAGS = -m32 -ffreestanding -fno-pic -fno-stack-protector -O2 -mno-sse -mno-sse2 -c
 # Переключаем компилятор в 32-битный режим без всяких зависимостей от библиотек glibc
 # -c только скомпилировать не в объектный файл
 LD = ld # Линковщик объектных файлов
@@ -12,7 +12,7 @@ C_SOURCES = $(filter-out kernel/kernel.c, $(wildcard kernel/*.c) $(wildcard driv
 C_OBJECTS = $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES)))
 
 # kernel.o всегда первый при линковке
-OBJECTS = build/kernel.o $(C_OBJECTS) build/isr.o
+OBJECTS = build/kernel.o $(C_OBJECTS) build/isr.o build/gdt_flush.o
 
 IMAGE = build/exomos.bin
 
@@ -36,6 +36,9 @@ build/%.o: drivers/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 build/isr.o: kernel/isr.asm
+	$(NASM) -f elf32 $< -o $@
+
+build/gdt_flush.o: kernel/gdt_flush.asm
 	$(NASM) -f elf32 $< -o $@
 
 build/kernel.bin: $(OBJECTS)

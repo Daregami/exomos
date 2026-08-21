@@ -1,4 +1,5 @@
 #include "../drivers/vga.h"
+#include "syscall.h"
 #include <stdint.h>
 #include "ports.h"
 #include "idt.h"
@@ -31,6 +32,17 @@ void idt_set_entry(int index, uint32_t handler) {
                                         // биты 3-0 = 1110 32 битный режим прерываний
                                         // процессор при выходе сбросит IF
     idt[index].offset_high = (handler >> 16) & 0xFFFF; // Старшая часть адреса хендлера
+}
+
+void idt_set_entry_user(int index, uint32_t handler) {
+    idt[index].offset_low = handler & 0xFFFF;
+    idt[index].selector = 0x08; // обработчик все равно в ring 0
+    idt[index].zero = 0;
+    idt[index].type_attr = 0b11101110;  // бит 7 = 1 запись активна
+                                        // биты 6-5 = DPL 11 - ring 3 может вызывать
+                                        // бит 4 = 0
+                                        // биты 3-0 = 1110 - 32-бит interrupt gate
+    idt[index].offset_high = (handler >> 16) & 0xFFFF;
 }
 
 void default_handler(uint32_t vector) {
@@ -69,6 +81,10 @@ void idt_init() {
         idt_set_entry(i, isr_stub_table[i]); // записываем адреса стабов
         register_handler(i, default_handler);
     }
+
+    // Вектор 0x80 - системный вызов, DPL=3 чтобы ring 3 мог вызывать
+    idt_set_entry_user(0x80, isr_stub_table[0x80]);
+    register_handler(0x80, syscall_handler);
 
     // Вектор 33 клавиатура (IRQ1, база 32 + 1)
     register_handler(33, keyboard_handler);
