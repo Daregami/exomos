@@ -1,7 +1,7 @@
-#include "../drivers/vga.h"
+#include "vga.h"
 #include <stdint.h>
-#include "ports.h"
-#include "pic.h"
+#include "../kernel/ports.h"
+#include "../kernel/pic.h"
 
 void keyboard_handler(uint32_t vector) {
     uint8_t scancode = inb(0x60);

@@ -4,6 +4,7 @@
 #include "idt.h"
 #include "gdt.h"
 #include "tss.h"
+#include "../drivers/ata.h"
 
 int kernel_main(void) {
     // Пишем строку с помощью vga драйвера
@@ -12,14 +13,8 @@ int kernel_main(void) {
     kernel_log(msg,VGA_OK);
 
     idt_init();
-kernel_log("IDT ok", VGA_OK);
-
-gdt_init();
-kernel_log("GDT ok", VGA_OK);
-
-tss_init(0xC0090000);
-kernel_log("TSS ok", VGA_OK);
-    
+    gdt_init();
+    tss_init(0xC0090000);
     pmm_init();
 
     // Разрешаем прерывания
@@ -30,6 +25,22 @@ kernel_log("TSS ok", VGA_OK);
 
     // Тест сискола из ядра
     asm volatile("int $0x80");
+
+    uint8_t buf[512];
+
+    ata_read_sectors(0, 1, buf); // читаем первый сектор (MBR)
+
+    vga_goto(0, 5);
+    // Первые два байта MBR - это начало загрузчика
+    // Последние два байта - сигнатура 0x55 0xAA
+    vga_print("ATA: ", BACK_BLACK | COLOR_GREEN);
+    vga_print_int(buf[0], BACK_BLACK | COLOR_GREEN);
+    vga_print(" ", BACK_BLACK | COLOR_GREEN);
+    vga_print_int(buf[1], BACK_BLACK | COLOR_GREEN);
+    vga_print(" ... ", BACK_BLACK | COLOR_GREEN);
+    vga_print_int(buf[510], BACK_BLACK | COLOR_GREEN);
+    vga_print(" ", BACK_BLACK | COLOR_GREEN);
+    vga_print_int(buf[511], BACK_BLACK | COLOR_GREEN);
 
     // Бесконечный цкил
     while (1) {
