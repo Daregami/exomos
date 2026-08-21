@@ -1,5 +1,5 @@
 #include "../drivers/vga.h"
-#include "syscall.h"
+#include "syscalls.h"
 #include <stdint.h>
 #include "ports.h"
 #include "idt.h"

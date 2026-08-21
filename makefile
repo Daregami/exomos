@@ -47,6 +47,7 @@ build/kernel.bin: $(OBJECTS)
 $(IMAGE): build/boot.bin build/loader.bin build/kernel.bin
 	cat $^ > $@
 	truncate -s 20M $@
+	python3 programs/tools/mkexomfs.py $@ programs/test/hello.txt
 
 run: $(IMAGE)
 	$(QEMU) -drive format=raw,file=$(IMAGE) -audiodev pa,id=snd0 -machine pcspk-audiodev=snd0
