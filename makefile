@@ -12,7 +12,7 @@ C_SOURCES = $(filter-out kernel/kernel.c, $(wildcard kernel/*.c) $(wildcard driv
 C_OBJECTS = $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES)))
 
 # kernel.o всегда первый при линковке
-OBJECTS = build/kernel.o $(C_OBJECTS) build/isr.o build/gdt_flush.o
+OBJECTS = build/kernel.o $(C_OBJECTS) build/isr.o build/gdt_flush.o build/usermode.o
 
 IMAGE = build/exomos.bin
 
@@ -40,14 +40,20 @@ build/isr.o: kernel/isr.asm
 
 build/gdt_flush.o: kernel/gdt_flush.asm
 	$(NASM) -f elf32 $< -o $@
+	
+build/usermode.o: kernel/usermode.asm
+	$(NASM) -f elf32 $< -o $@
 
 build/kernel.bin: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 
-$(IMAGE): build/boot.bin build/loader.bin build/kernel.bin
+programs/test/hello.bin: programs/test/hello.asm
+	$(NASM) -f bin $< -o $@
+
+$(IMAGE): build/boot.bin build/loader.bin build/kernel.bin programs/test/hello.bin
 	cat $^ > $@
 	truncate -s 20M $@
-	python3 programs/tools/mkexomfs.py $@ programs/test/hello.txt
+	python3 programs/tools/mkexomfs.py $@ programs/test/
 
 run: $(IMAGE)
 	$(QEMU) -drive format=raw,file=$(IMAGE) -audiodev pa,id=snd0 -machine pcspk-audiodev=snd0

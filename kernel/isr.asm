@@ -37,3 +37,14 @@ isr_stub_table:
     dd isr_stub_%+i
 %assign i i+1
 %endrep
+
+global syscall_stub
+extern syscall_dispatch
+
+syscall_stub:
+    pusha
+    push esp              ; передаем указатель на сохраненные регистры
+    call syscall_dispatch
+    add esp, 4
+    popa
+    iret

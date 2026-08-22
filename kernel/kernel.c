@@ -1,6 +1,8 @@
 #include "../drivers/vga.h"
 #include "../drivers/ata.h"
 #include "../drivers/exomfs.h"
+#include "ports.h"
+#include "process.h"
 #include <stdint.h> // Стандартные типы данных
 #include "alloc.h"
 #include "idt.h"
@@ -17,6 +19,7 @@ int kernel_main(void) {
     gdt_init();
     tss_init(0xC0090000);
     pmm_init();
+    exomfs_init();
 
     // Разрешаем прерывания
     asm volatile("sti");
@@ -25,21 +28,9 @@ int kernel_main(void) {
     asm volatile("int $60");
 
     // Тест сискола из ядра
-    asm volatile("int $0x80");
+    // asm volatile("int $0x80");
 
-    if (!exomfs_init()) {
-        kernel_log("exomfs not found", VGA_ERROR);
-    } else {
-        kernel_log("exomfs OK", VGA_OK);
-
-        int idx = exomfs_find("hello.txt");
-        if (idx >= 0) {
-            uint8_t buf[512];
-            exomfs_read(idx, buf);
-            vga_goto(0, 6);
-            vga_print((char *)buf, BACK_BLACK | COLOR_GREEN);
-        }
-    }
+    process_exec("hello.bin");
 
     // Бесконечный цкил
     while (1) {

@@ -68,6 +68,7 @@ void register_handler(uint32_t vector, void (*handler)(uint32_t)) {
 }
 
 extern void keyboard_handler(uint32_t vector);
+extern void syscall_stub(); // Для сисколов свой стаб
 
 void idt_init() {
     pic_remap();
@@ -83,8 +84,7 @@ void idt_init() {
     }
 
     // Вектор 0x80 - системный вызов, DPL=3 чтобы ring 3 мог вызывать
-    idt_set_entry_user(0x80, isr_stub_table[0x80]);
-    register_handler(0x80, syscall_handler);
+    idt_set_entry_user(0x80, (uint32_t)syscall_stub);
 
     // Вектор 33 клавиатура (IRQ1, база 32 + 1)
     register_handler(33, keyboard_handler);

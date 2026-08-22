@@ -1,5 +1,6 @@
 import struct
 import sys
+import os
 
 SECTOR = 512
 EXOMFS_START = 2048  # сектор начала ФС
@@ -7,11 +8,22 @@ MAGIC = 0x45584F4D   # "EXOM"
 
 def main():
     if len(sys.argv) < 3:
-        print("Использование: mkexomfs.py <disk_image> <file1> [file2] ...")
+        print("Использование: mkexomfs.py <disk_image> <dir>")
         return
 
     image_path = sys.argv[1]
-    files = sys.argv[2:]
+    dir_path = sys.argv[2]
+
+    # Собираем все файлы из папки
+    files = sorted([
+        os.path.join(dir_path, f)
+        for f in os.listdir(dir_path)
+        if os.path.isfile(os.path.join(dir_path, f))
+    ])
+
+    if not files:
+        print("Нет файлов в", dir_path)
+        return
 
     # Заголовок: magic + file_count
     header = struct.pack('<II', MAGIC, len(files))
@@ -26,7 +38,7 @@ def main():
         with open(f, 'rb') as fh:
             data = fh.read()
 
-        name = f.split('/')[-1]
+        name = os.path.basename(f)
         name_bytes = name.encode('ascii')[:24].ljust(24, b'\x00')
 
         entry = struct.pack('<24sII', name_bytes, data_offset, len(data))
@@ -46,6 +58,8 @@ def main():
         img.write(b'\x00' * (SECTOR - written))
         # Записываем данные файлов
         img.write(file_data)
+
+    print(f"exomfs: {len(files)} files packed")
 
 if __name__ == '__main__':
     main()
